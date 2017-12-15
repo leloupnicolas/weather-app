@@ -12,22 +12,37 @@ import SwiftyJSON
 import Need
 import CoreData
 
+typealias FormattedForecasts = [String: [Forecast]]
+
 enum ForecastRepositoryError: Error {
   case missingTemperature
   case missingMeanWind
 }
 
 protocol ForecastsRepository {
-  func fetchRemotely(forLatitude latitude: Double, andLongitude longitude: Double, completion: @escaping ([Forecast]) -> Void)
+  func fetchRemotely(forLatitude latitude: Double, andLongitude longitude: Double, completion: @escaping (FormattedForecasts) -> Void)
   func fetchLocally(completion: @escaping ([Forecast]) -> Void)
   func deserialize(forDate date: Date, latitude: Double, longitude: Double, data: JSON) -> Forecast?
 }
 
 class DefaultForecastsRepository: ServicesInjectionAware {
+  lazy var dateTimeFormatter: DateFormatter = {
+    let dateTimeFormatter = DateFormatter()
+    dateTimeFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+
+    return dateTimeFormatter
+  }()
+
+  lazy var dateFormatter: DateFormatter = {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "yyyy-MM-dd"
+
+    return dateFormatter
+  }()
 }
 
 extension DefaultForecastsRepository: ForecastsRepository {
-  func fetchRemotely(forLatitude latitude: Double, andLongitude longitude: Double, completion: @escaping ([Forecast]) -> Void) {
+  func fetchRemotely(forLatitude latitude: Double, andLongitude longitude: Double, completion: @escaping (FormattedForecasts) -> Void) {
     Alamofire.request(self.formatUrl(forLatitude: latitude, andLongitude: longitude), method: .get).validate().responseJSON { response in
       switch response.result {
       case .success(let value):
@@ -48,11 +63,11 @@ extension DefaultForecastsRepository: ForecastsRepository {
 
         // TODO handle local storage saving
         
-        completion(entities)
+        completion(self.formatData(entities: entities))
 
       case .failure(let error):
         print(error)
-        completion([])
+        completion([:])
       }
     }
   }
@@ -99,5 +114,20 @@ extension DefaultForecastsRepository: ForecastsRepository {
     }
 
     return nil
+  }
+
+  private func formatData(entities: [Forecast]) -> FormattedForecasts {
+    var formattedData: FormattedForecasts = [:]
+
+    for entity in entities {
+      let index = dateFormatter.string(from: entity.datetime!)
+      if nil == formattedData[index] {
+        formattedData[index] = []
+      }
+      
+      formattedData[index]?.append(entity)
+    }
+    
+    return formattedData
   }
 }

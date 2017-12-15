@@ -9,21 +9,95 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--City-->
+        <!-- -->
         <scene sceneID="tne-QT-ifu">
             <objects>
-                <viewController title="City" id="BYZ-38-t0r" customClass="ViewController" customModule="weatherapp" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="BYZ-38-t0r" customClass="ForecastsViewController" customModule="weatherapp" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="9jL-CC-pO4">
+                                <rect key="frame" x="0.0" y="116" width="375" height="551"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <prototypes>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="WEATHER_DAY_CELL" id="v52-Ig-wlV">
+                                        <rect key="frame" x="0.0" y="28" width="375" height="44"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="v52-Ig-wlV" id="NA9-NV-E4D">
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="43.5"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
+                                </prototypes>
+                                <connections>
+                                    <outlet property="dataSource" destination="BYZ-38-t0r" id="hNA-q0-ivU"/>
+                                    <outlet property="delegate" destination="BYZ-38-t0r" id="Bbl-0s-ECB"/>
+                                </connections>
+                            </tableView>
+                        </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="9jL-CC-pO4" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" id="Wj6-el-Emk"/>
+                            <constraint firstItem="9jL-CC-pO4" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="d9z-GZ-zEk"/>
+                            <constraint firstItem="9jL-CC-pO4" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="nEu-lR-W34"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="9jL-CC-pO4" secondAttribute="bottom" id="sqY-fd-vXq"/>
+                        </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
-                    <navigationItem key="navigationItem" id="dBx-Lf-BdV"/>
+                    <navigationItem key="navigationItem" title=" " id="dBx-Lf-BdV"/>
+                    <connections>
+                        <outlet property="tableView" destination="9jL-CC-pO4" id="Yp8-Jg-YWI"/>
+                        <segue destination="ecL-34-6sC" kind="show" identifier="FORECASTS_TO_DETAILS_SEGUE" id="1vX-A5-lC3"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="479.19999999999999" y="133.5832083958021"/>
+        </scene>
+        <!--Forecast View Controller-->
+        <scene sceneID="iwe-R1-pyf">
+            <objects>
+                <viewController id="ecL-34-6sC" customClass="ForecastViewController" customModule="weatherapp" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="JYg-ew-OSA">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="10p-pI-c6x">
+                                <rect key="frame" x="0.0" y="116" width="375" height="551"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <prototypes>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="FORECAST_ENTRY" id="qge-BT-1Ps">
+                                        <rect key="frame" x="0.0" y="28" width="375" height="44"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="qge-BT-1Ps" id="5JQ-co-WFY">
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="43.5"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
+                                </prototypes>
+                                <connections>
+                                    <outlet property="dataSource" destination="ecL-34-6sC" id="K9b-rG-Xhn"/>
+                                    <outlet property="delegate" destination="ecL-34-6sC" id="yRd-Q3-Lt2"/>
+                                </connections>
+                            </tableView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="10p-pI-c6x" firstAttribute="width" secondItem="JYg-ew-OSA" secondAttribute="width" id="Dp6-4Q-kKK"/>
+                            <constraint firstItem="10p-pI-c6x" firstAttribute="top" secondItem="urZ-hR-OaO" secondAttribute="top" id="Mi4-pB-Kel"/>
+                            <constraint firstItem="urZ-hR-OaO" firstAttribute="bottom" secondItem="10p-pI-c6x" secondAttribute="bottom" id="TjV-hZ-oJE"/>
+                            <constraint firstItem="10p-pI-c6x" firstAttribute="centerX" secondItem="urZ-hR-OaO" secondAttribute="centerX" id="VKa-ns-grO"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="urZ-hR-OaO"/>
+                    </view>
+                    <connections>
+                        <outlet property="tableView" destination="10p-pI-c6x" id="6rV-xa-lku"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="SpA-dD-rRh" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1228" y="134"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="Onz-GQ-A18">
