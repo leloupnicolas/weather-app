@@ -8,15 +8,18 @@
 
 import UIKit
 import CoreData
+import Need
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
   var window: UIWindow?
-
+  let lazyServiceLocator: LazyServiceLocator = LazyServiceLocator()
 
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
+    self.processRegistration()
+    
     return true
   }
 
@@ -89,5 +92,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       }
   }
 
+}
+
+extension AppDelegate: ServicesRegistry {
+  var serviceLocator: ServiceLocator {
+    return self.lazyServiceLocator
+  }
+
+  func processRegistration() {
+    // Repositories
+    self.lazyServiceLocator.addService(DefaultForecastsRepository() as ForecastsRepository)
+  }
 }
 

@@ -7,19 +7,30 @@
 //
 
 import UIKit
+import PKHUD
 
-class ViewController: UIViewController {
-
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    // Do any additional setup after loading the view, typically from a nib.
+class ViewController: BaseViewController {
+  let defaultLatitude = 48.85341
+  let defaultLongitude = 2.3488
+  
+  var forecasts: [Forecast] = [] {
+    didSet {
+      
+    }
   }
-
-  override func didReceiveMemoryWarning() {
-    super.didReceiveMemoryWarning()
-    // Dispose of any resources that can be recreated.
+  
+  lazy var forecastsRepository: ForecastsRepository = {
+    return getService()!
+  }()
+  
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    
+    HUD.show(.progress)
+    forecastsRepository.fetchRemotely(forLatitude: defaultLatitude, andLongitude: defaultLongitude) { (forecasts) in
+      HUD.hide()
+      print(forecasts.count)
+    }
   }
-
-
 }
 
