@@ -9,7 +9,15 @@
 import Foundation
 import UIKit
 
+// MARK: Class
+/// Base View Controller which gathers common view controllers needs.
 class BaseViewController: UIViewController {
+  
+  /**
+   Retrieves the registered service of type T from the LazyServiceLocator.
+   
+   - Returns:  The registered instance.
+   */
   func getService<T>() -> T? {
     guard let appDelegate: AppDelegate = UIApplication.shared.delegate as? AppDelegate else {
       return nil
