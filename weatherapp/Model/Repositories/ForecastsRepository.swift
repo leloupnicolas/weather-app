@@ -24,7 +24,7 @@ enum ForecastRepositoryError: Error {
 protocol ForecastsRepository {
   /**
    Fetches forecasts data from the online API.
-   TODO: Fetched data is stored locally.
+   Fetched data is stored locally.
    
    - Parameter latitude:   The location-to-get-weather's latitude.
    - Parameter longitude:  The location-to-get-weather's longitude.
@@ -89,8 +89,6 @@ extension DefaultForecastsRepository: ForecastsRepository {
 
           entities.append(consistentEntity)
         }
-
-        // TODO handle local storage saving
         
         completion(self.formatData(entities: entities))
 
@@ -102,7 +100,24 @@ extension DefaultForecastsRepository: ForecastsRepository {
   }
 
   func fetchLocally(forLatitude latitude: Double, andLongitude longitude: Double, completion: @escaping (FormattedForecasts) -> Void) {
-    // TODO
+    guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+      return
+    }
+
+    let managedContext = appDelegate.persistentContainer.viewContext
+    let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Forecast")
+
+    do {
+      let entities = try managedContext.fetch(fetchRequest)
+      if let forecasts: [Forecast] = entities as? [Forecast] {
+        completion(self.formatData(entities: forecasts))
+      } else {
+        completion([:])
+      }
+    } catch let error {
+      print("Could not fetch forecasts. \(error)")
+      completion([:])
+    }
   }
 
   func deserialize(forDate date: Date, latitude: Double, longitude: Double, data: JSON) -> Forecast? {
@@ -127,13 +142,33 @@ extension DefaultForecastsRepository: ForecastsRepository {
     forecast.setValue(latitude, forKey: "latitude")
     forecast.setValue(longitude, forKey: "longitude")
     
+    do {
+      try managedContext.save()
+    } catch let error {
+      print("Could not save forecast. \(error)")
+    }
+    
     return forecast as? Forecast
   }
 
+  /**
+   
+   
+   - Parameter :
+   
+   - Returns :
+   */
   private func formatUrl(forLatitude latitude: Double, andLongitude longitude: Double) -> String {
     return "https://www.infoclimat.fr/public-api/gfs/json?_ll=\(latitude),\(longitude)&_auth=UkgFElUrVnRTfgcwAXcAKQJqDzoPeQUiUy8HZFs%2BB3oAawRlAmJTNV4wVypSfVFnBSgObQ80BDRROgF5Xy0HZlI4BWlVPlYxUzwHYgEuACsCLA9uDy8FIlMxB2lbNQd6AGEEZQJiUy9eN1c0UnxRZAU3DmYPLwQjUTMBY18zB2dSMgVlVTZWNVM9B2ABLgArAjQPPg8zBT5TYgczW2IHZwBiBGYCYlNkXmdXNlJ8UWcFMA5uDzkEP1E3AWZfMQd7Ui4FGFVFVilTfAcnAWQAcgIsDzoPbgVp&_c=a70e327597460269ee0853b1ca78c9ba"
   }
   
+  /**
+   
+   
+   - Parameter :
+   
+   - Returns :
+   */
   private func deserializeDate(date: String) -> Date? {
     if let validDate = dateTimeFormatter.date(from: date) {
       return validDate
@@ -142,6 +177,13 @@ extension DefaultForecastsRepository: ForecastsRepository {
     return nil
   }
 
+  /**
+   
+   
+   - Parameter :
+   
+   - Returns :
+   */
   private func formatData(entities: [Forecast]) -> FormattedForecasts {
     var formattedData: FormattedForecasts = [:]
 

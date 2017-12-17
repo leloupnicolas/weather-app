@@ -9,12 +9,17 @@
 import Foundation
 import UIKit
 
+// MARK: Class
+/// Forecast View Controller: displays a table view with forecasts for a given day
 class ForecastViewController: BaseViewController {
+  // MARK: data variables
   var forecasts: [Forecast]!
   var dateAsString: String!
   
+  // MARK: user interface variables
   @IBOutlet weak var tableView: UITableView!
   
+  // MARK: Overriden methods
   override func viewDidLoad() {
     super.viewDidLoad()
     

@@ -12,6 +12,10 @@ import UIKit
 // MARK: Class
 /// Base View Controller which gathers common view controllers needs.
 class BaseViewController: UIViewController {
+  /**
+   Flag to store wether data has already been loaded during navigation
+   */
+  var isDataAlreadyLoaded: Bool = false
   
   /**
    Retrieves the registered service of type T from the LazyServiceLocator.

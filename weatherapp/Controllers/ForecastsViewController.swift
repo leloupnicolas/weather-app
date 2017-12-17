@@ -10,7 +10,10 @@ import UIKit
 import PKHUD
 import CoreLocation
 
+// MARK: Class
+/// Forecasts View Controller: displays a table view with forecasts by days
 class ForecastsViewController: BaseViewController {
+  // MARK: data variables
   let defaultCoordinates: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 48.85341, longitude: 2.3488)
   var currentCoordinates: CLLocationCoordinate2D! {
     didSet {
@@ -26,9 +29,11 @@ class ForecastsViewController: BaseViewController {
   }
   var chosenIndex: String!
   
+  // MARK: UI variables
   @IBOutlet weak var tableView: UITableView!
   var locationActionSheet: UIAlertController!
   
+  // MARK: services and utils variables
   var forecasts: FormattedForecasts = [:] {
     didSet {
       orderedForecastsIndices = Array(forecasts.keys).sorted(by: <)
@@ -36,20 +41,18 @@ class ForecastsViewController: BaseViewController {
     }
   }
   var orderedForecastsIndices: [String] = []
-  
   lazy var forecastsRepository: ForecastsRepository = {
     return getService()!
   }()
-
   lazy var dateFormatter: DateFormatter = {
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM-dd"
 
     return dateFormatter
   }()
-  
   var locationManager: CLLocationManager!
 
+  // MARK: Overridden methods
   override func viewDidLoad() {
     super.viewDidLoad()
 
@@ -82,19 +85,36 @@ class ForecastsViewController: BaseViewController {
     super.prepare(for: segue, sender: sender)
   }
   
+  // MARK: Private own methods
+  /**
+   Fetches forecasts data, remotely or locally.
+   */
   private func refreshData() {
-    var coordinateToUse = defaultCoordinates
-    if let userCurrentCoordinate = currentCoordinates, !isDefaultLocation {
-      coordinateToUse = userCurrentCoordinate
-    }
-    
-    HUD.show(.progress)
-    forecastsRepository.fetchRemotely(forLatitude: coordinateToUse.latitude, andLongitude: coordinateToUse.longitude) { (forecasts) in
-      HUD.hide()
-      self.forecasts = forecasts
+    if !isDataAlreadyLoaded {
+      isDataAlreadyLoaded = true
+      var coordinateToUse = defaultCoordinates
+      if let userCurrentCoordinate = currentCoordinates, !isDefaultLocation {
+        coordinateToUse = userCurrentCoordinate
+      }
+      
+      HUD.show(.progress)
+      forecastsRepository.fetchLocally(forLatitude: coordinateToUse.latitude, andLongitude: coordinateToUse.longitude) { (localForecasts) in
+        if 0 < localForecasts.count {
+          HUD.hide()
+          self.forecasts = localForecasts
+        } else {
+          self.forecastsRepository.fetchRemotely(forLatitude: coordinateToUse.latitude, andLongitude: coordinateToUse.longitude) { (remoteForecasts) in
+            HUD.hide()
+            self.forecasts = remoteForecasts
+          }
+        }
+      }
     }
   }
   
+  /**
+   Prepares location source action sheet.
+   */
   private func initActionSheet() {
     locationActionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
     let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (_) in }
@@ -110,17 +130,26 @@ class ForecastsViewController: BaseViewController {
     locationActionSheet.popoverPresentationController?.delegate = self
   }
   
+  /**
+   Prepares Core Location uses.
+   */
   private func initCoreLocation() {
     locationManager = CLLocationManager()
     locationManager.delegate = self
     locationManager.desiredAccuracy = kCLLocationAccuracyBest
   }
   
+  /**
+   Refreshes user interface, reloading table view content and updating controller title.
+   */
   private func refreshUI() {
     tableView.reloadData()
     self.title = isDefaultLocation ? "Default location" : "Current location"
   }
 
+  /**
+   Fired when location source flag changed. Handles user permissions asking and data fetching.
+   */
   private func locationSourceChanged() {
     if isDefaultLocation {
       refreshData()
