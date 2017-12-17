@@ -8,14 +8,26 @@
 
 import UIKit
 import PKHUD
+import CoreLocation
 
 class ForecastsViewController: BaseViewController {
-  let defaultLatitude = 48.85341
-  let defaultLongitude = 2.3488
-  var isDefaultLocation = true
+  let defaultCoordinates: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 48.85341, longitude: 2.3488)
+  var currentCoordinates: CLLocationCoordinate2D! {
+    didSet {
+      if !isDefaultLocation {
+        refreshData()
+      }
+    }
+  }
+  var isDefaultLocation = true {
+    didSet {
+      locationSourceChanged()
+    }
+  }
   var chosenIndex: String!
   
   @IBOutlet weak var tableView: UITableView!
+  var locationActionSheet: UIAlertController!
   
   var forecasts: FormattedForecasts = [:] {
     didSet {
@@ -36,14 +48,19 @@ class ForecastsViewController: BaseViewController {
     return dateFormatter
   }()
   
+  var locationManager: CLLocationManager!
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    initActionSheet()
+    initCoreLocation()
+  }
+
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
     
-    HUD.show(.progress)
-    forecastsRepository.fetchRemotely(forLatitude: defaultLatitude, andLongitude: defaultLongitude) { (forecasts) in
-      HUD.hide()
-      self.forecasts = forecasts
-    }
+    refreshData()
   }
   
   override func shouldPerformSegue(withIdentifier identifier: String, sender: Any?) -> Bool {
@@ -65,9 +82,59 @@ class ForecastsViewController: BaseViewController {
     super.prepare(for: segue, sender: sender)
   }
   
+  private func refreshData() {
+    var coordinateToUse = defaultCoordinates
+    if let userCurrentCoordinate = currentCoordinates, !isDefaultLocation {
+      coordinateToUse = userCurrentCoordinate
+    }
+    
+    HUD.show(.progress)
+    forecastsRepository.fetchRemotely(forLatitude: coordinateToUse.latitude, andLongitude: coordinateToUse.longitude) { (forecasts) in
+      HUD.hide()
+      self.forecasts = forecasts
+    }
+  }
+  
+  private func initActionSheet() {
+    locationActionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+    let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (_) in }
+    locationActionSheet.addAction(cancelAction)
+    let defaultLocationAction = UIAlertAction(title: "Use default location", style: .default) { (_) in
+      self.isDefaultLocation = true
+    }
+    locationActionSheet.addAction(defaultLocationAction)
+    let currentLocationAction = UIAlertAction(title: "Use current location", style: .default) { (_) in
+      self.isDefaultLocation = false
+    }
+    locationActionSheet.addAction(currentLocationAction)
+    locationActionSheet.popoverPresentationController?.delegate = self
+  }
+  
+  private func initCoreLocation() {
+    locationManager = CLLocationManager()
+    locationManager.delegate = self
+    locationManager.desiredAccuracy = kCLLocationAccuracyBest
+  }
+  
   private func refreshUI() {
     tableView.reloadData()
     self.title = isDefaultLocation ? "Default location" : "Current location"
+  }
+
+  private func locationSourceChanged() {
+    if isDefaultLocation {
+      refreshData()
+    } else {
+      locationManager.requestAlwaysAuthorization()
+      
+      if CLLocationManager.locationServicesEnabled() {
+        locationManager.startUpdatingLocation()
+      }
+    }
+  }
+  
+  @IBAction func editButtonTapped(_ sender: Any) {
+    self.present(locationActionSheet, animated: true)
   }
 }
 
@@ -112,3 +179,24 @@ extension ForecastsViewController: UITableViewDelegate {
   }
 }
 
+extension ForecastsViewController: UIPopoverPresentationControllerDelegate {
+  public func prepareForPopoverPresentation(_ popoverPresentationController: UIPopoverPresentationController) {
+    popoverPresentationController.sourceView = self.view
+    popoverPresentationController.sourceRect = self.view.bounds
+  }
+}
+
+extension ForecastsViewController: CLLocationManagerDelegate {
+  func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    let userLocation:CLLocation = locations[0] as CLLocation
+    
+    manager.stopUpdatingLocation()
+    
+    currentCoordinates = userLocation.coordinate
+  }
+  
+  func locationManager(_ manager: CLLocationManager, didFailWithError error: Error)
+  {
+    print("Error \(error)")
+  }
+}

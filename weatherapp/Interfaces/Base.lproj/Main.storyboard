@@ -46,7 +46,13 @@
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
-                    <navigationItem key="navigationItem" title=" " id="dBx-Lf-BdV"/>
+                    <navigationItem key="navigationItem" title=" " id="dBx-Lf-BdV">
+                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="SrC-Py-evq">
+                            <connections>
+                                <action selector="editButtonTapped:" destination="BYZ-38-t0r" id="h9a-1P-GCg"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                     <connections>
                         <outlet property="tableView" destination="9jL-CC-pO4" id="Yp8-Jg-YWI"/>
                         <segue destination="ecL-34-6sC" kind="show" identifier="FORECASTS_TO_DETAILS_SEGUE" id="1vX-A5-lC3"/>
