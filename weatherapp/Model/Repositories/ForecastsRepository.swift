@@ -179,6 +179,7 @@ extension DefaultForecastsRepository: ForecastsRepository {
 
     let managedContext = appDelegate.persistentContainer.viewContext
     let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Forecast")
+    fetchRequest.predicate = NSPredicate(format: "latitude == %@ and longitude == %@", latitude, longitude)
 
     do {
       let entities = try managedContext.fetch(fetchRequest)

@@ -24,6 +24,7 @@ class ForecastsViewController: BaseViewController {
   }
   var isDefaultLocation = true {
     didSet {
+      isDataAlreadyLoaded = false
       locationSourceChanged()
     }
   }
