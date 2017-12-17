@@ -135,10 +135,7 @@ extension DefaultForecastsRepository: ForecastsRepository {
   }
   
   private func deserializeDate(date: String) -> Date? {
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-
-    if let validDate = dateFormatter.date(from: date) {
+    if let validDate = dateTimeFormatter.date(from: date) {
       return validDate
     }
 
@@ -150,13 +147,14 @@ extension DefaultForecastsRepository: ForecastsRepository {
 
     for entity in entities {
       let index = dateFormatter.string(from: entity.datetime!)
+      
       if nil == formattedData[index] {
         formattedData[index] = []
       }
       
       formattedData[index]?.append(entity)
     }
-    
+
     return formattedData
   }
 }

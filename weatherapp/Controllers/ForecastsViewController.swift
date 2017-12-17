@@ -19,9 +19,11 @@ class ForecastsViewController: BaseViewController {
   
   var forecasts: FormattedForecasts = [:] {
     didSet {
+      orderedForecastsIndices = Array(forecasts.keys).sorted(by: <)
       refreshUI()
     }
   }
+  var orderedForecastsIndices: [String] = []
   
   lazy var forecastsRepository: ForecastsRepository = {
     return getService()!
@@ -29,7 +31,7 @@ class ForecastsViewController: BaseViewController {
 
   lazy var dateFormatter: DateFormatter = {
     let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "dd/MM/yyyy"
+    dateFormatter.dateFormat = "yyyy-MM-dd"
 
     return dateFormatter
   }()
@@ -80,8 +82,19 @@ extension ForecastsViewController: UITableViewDataSource {
       for: indexPath
     )
 
-    cell.textLabel?.text = Array(forecasts.keys)[indexPath.row]
-
+    let stringDate = orderedForecastsIndices[indexPath.row]
+    let concernedDate: Date = dateFormatter.date(from: stringDate)!
+    
+    if Calendar.current.isDateInToday(concernedDate) {
+      cell.textLabel?.text = "Today"
+    } else if Calendar.current.isDateInYesterday(concernedDate) {
+      cell.textLabel?.text = "Yesterday"
+    } else if Calendar.current.isDateInTomorrow(concernedDate) {
+      cell.textLabel?.text = "Tomorrow"
+    } else {
+      cell.textLabel?.text = dateFormatter.string(from: concernedDate)
+    }
+    
     return cell
   }
 }
@@ -92,7 +105,7 @@ extension ForecastsViewController: UITableViewDelegate {
   }
 
   func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-    chosenIndex = Array(forecasts.keys)[indexPath.row]
+    chosenIndex = orderedForecastsIndices[indexPath.row]
     if self.shouldPerformSegue(withIdentifier: "FORECASTS_TO_DETAILS_SEGUE", sender: self) {
       self.performSegue(withIdentifier: "FORECASTS_TO_DETAILS_SEGUE", sender: self)
     }

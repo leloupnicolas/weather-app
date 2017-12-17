@@ -15,13 +15,6 @@ class ForecastViewController: BaseViewController {
   
   @IBOutlet weak var tableView: UITableView!
   
-  lazy var timeFormatter: DateFormatter = {
-    let timeFormatter = DateFormatter()
-    timeFormatter.dateFormat = "HH:mm"
-    
-    return timeFormatter
-  }()
-  
   override func viewDidLoad() {
     super.viewDidLoad()
     
@@ -46,13 +39,12 @@ extension ForecastViewController: UITableViewDataSource {
   }
   
   func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    let cell: UITableViewCell = tableView.dequeueReusableCell(
+    let cell: ForecastTemperatureTableViewCell = tableView.dequeueReusableCell(
       withIdentifier: "FORECAST_ENTRY",
       for: indexPath
-    )
+    ) as! ForecastTemperatureTableViewCell
     
-    let forecast = forecasts[indexPath.row]
-    cell.textLabel?.text = "\(timeFormatter.string(from: forecast.datetime!)) : \(forecast.floorTemperature)°"
+    cell.setData(forecast: forecasts[indexPath.row])
     
     return cell
   }
