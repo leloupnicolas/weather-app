@@ -40,16 +40,8 @@ protocol ForecastsRepository {
    - Parameter completion: Completion block called with retrieved data.
    */
   func fetchLocally(forLatitude latitude: Double, andLongitude longitude: Double, completion: @escaping (FormattedForecasts) -> Void)
-  
-  /**
-   Deserialized JSON retrieved from the API.
-   
-   - Parameter date:        The date of the forecast.
-   - Parameter latitude:    The location-to-get-weather's latitude.
-   - Parameter longitude:   The location-to-get-weather's longitude.
-   - Parameter data:        The json representation of data.
-   */
-  func deserialize(forDate date: Date, latitude: Double, longitude: Double, data: JSON) -> Forecast?
+
+  func deserialize(forLatitude latitude: Double, andLongitude longitude: Double, json: JSON) -> FormattedForecasts
 }
 
 // MARK: Class
@@ -68,6 +60,95 @@ class DefaultForecastsRepository: ServicesInjectionAware {
 
     return dateFormatter
   }()
+  
+  /**
+   Formats api url with given latitude and longitude.
+   
+   - Parameter latitude:  The latitude
+   - Parameter longitude: The longiude
+   
+   - Returns:  The formatted url
+   */
+  private func formatUrl(forLatitude latitude: Double, andLongitude longitude: Double) -> String {
+    return "https://www.infoclimat.fr/public-api/gfs/json?_ll=\(latitude),\(longitude)&_auth=UkgFElUrVnRTfgcwAXcAKQJqDzoPeQUiUy8HZFs%2BB3oAawRlAmJTNV4wVypSfVFnBSgObQ80BDRROgF5Xy0HZlI4BWlVPlYxUzwHYgEuACsCLA9uDy8FIlMxB2lbNQd6AGEEZQJiUy9eN1c0UnxRZAU3DmYPLwQjUTMBY18zB2dSMgVlVTZWNVM9B2ABLgArAjQPPg8zBT5TYgczW2IHZwBiBGYCYlNkXmdXNlJ8UWcFMA5uDzkEP1E3AWZfMQd7Ui4FGFVFVilTfAcnAWQAcgIsDzoPbgVp&_c=a70e327597460269ee0853b1ca78c9ba"
+  }
+  
+  /**
+   Deserialize date from a string representation.
+   
+   - Parameter date: The string representation.
+   
+   - Returns: Date either the string is correctly formatted, nil neither.
+   */
+  private func deserializeDate(date: String) -> Date? {
+    if let validDate = dateTimeFormatter.date(from: date) {
+      return validDate
+    }
+    
+    return nil
+  }
+  
+  /**
+   Formats forecasts, gathered by days.
+   
+   - Parameter entities: Forecasts
+   
+   - Returns: The formatted array of forecasts by days.
+   */
+  private func formatData(entities: [Forecast]) -> FormattedForecasts {
+    var formattedData: FormattedForecasts = [:]
+    
+    for entity in entities {
+      let index = dateFormatter.string(from: entity.datetime!)
+      
+      if nil == formattedData[index] {
+        formattedData[index] = []
+      }
+      
+      formattedData[index]?.append(entity)
+    }
+    
+    return formattedData
+  }
+
+  /**
+   Deserializes JSON retrieved from the API.
+
+   - Parameter date:        The date of the forecast.
+   - Parameter latitude:    The location-to-get-weather's latitude.
+   - Parameter longitude:   The location-to-get-weather's longitude.
+   - Parameter data:        The json representation of data.
+   */
+  private func deserialize(forDate date: Date, latitude: Double, longitude: Double, data: JSON) -> Forecast? {
+    guard let temperature = data["temperature"]["sol"].double else {
+      return nil
+    }
+
+    guard let meanWind = data["vent_moyen"]["10m"].double else {
+      return nil
+    }
+
+    guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+      return nil
+    }
+    let managedContext = appDelegate.persistentContainer.viewContext
+
+    let entity = NSEntityDescription.entity(forEntityName: "Forecast", in: managedContext)!
+    let forecast = NSManagedObject(entity: entity, insertInto: managedContext)
+    forecast.setValue(date, forKey: "datetime")
+    forecast.setValue(meanWind, forKey: "meanWind")
+    forecast.setValue(temperature, forKey: "floorTemperature")
+    forecast.setValue(latitude, forKey: "latitude")
+    forecast.setValue(longitude, forKey: "longitude")
+
+    do {
+      try managedContext.save()
+    } catch let error {
+      print("Could not save forecast. \(error)")
+    }
+
+    return forecast as? Forecast
+  }
 }
 
 extension DefaultForecastsRepository: ForecastsRepository {
@@ -75,22 +156,7 @@ extension DefaultForecastsRepository: ForecastsRepository {
     Alamofire.request(self.formatUrl(forLatitude: latitude, andLongitude: longitude), method: .get).validate().responseJSON { response in
       switch response.result {
       case .success(let value):
-        let json = JSON(value)
-
-        var entities: [Forecast] = []
-        for (key, data) in json {
-          guard let existingDate = self.deserializeDate(date: key) else {
-            continue
-          }
-          
-          guard let consistentEntity = self.deserialize(forDate: existingDate, latitude: latitude, longitude: longitude, data: data) else {
-            continue
-          }
-
-          entities.append(consistentEntity)
-        }
-        
-        completion(self.formatData(entities: entities))
+        completion(self.deserialize(forLatitude: latitude, andLongitude: longitude, json: JSON(value)))
 
       case .failure(let error):
         print(error)
@@ -120,84 +186,20 @@ extension DefaultForecastsRepository: ForecastsRepository {
     }
   }
 
-  func deserialize(forDate date: Date, latitude: Double, longitude: Double, data: JSON) -> Forecast? {
-    guard let temperature = data["temperature"]["sol"].double else {
-      return nil
-    }
-
-    guard let meanWind = data["vent_moyen"]["10m"].double else {
-      return nil
-    }
-
-    guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
-        return nil
-    }
-    let managedContext = appDelegate.persistentContainer.viewContext
-    
-    let entity = NSEntityDescription.entity(forEntityName: "Forecast", in: managedContext)!
-    let forecast = NSManagedObject(entity: entity, insertInto: managedContext)
-    forecast.setValue(date, forKey: "datetime")
-    forecast.setValue(meanWind, forKey: "meanWind")
-    forecast.setValue(temperature, forKey: "floorTemperature")
-    forecast.setValue(latitude, forKey: "latitude")
-    forecast.setValue(longitude, forKey: "longitude")
-    
-    do {
-      try managedContext.save()
-    } catch let error {
-      print("Could not save forecast. \(error)")
-    }
-    
-    return forecast as? Forecast
-  }
-
-  /**
-   Formats api url with given latitude and longitude.
-   
-   - Parameter latitude:  The latitude
-   - Parameter longitude: The longiude
-   
-   - Returns:  The formatted url
-   */
-  private func formatUrl(forLatitude latitude: Double, andLongitude longitude: Double) -> String {
-    return "https://www.infoclimat.fr/public-api/gfs/json?_ll=\(latitude),\(longitude)&_auth=UkgFElUrVnRTfgcwAXcAKQJqDzoPeQUiUy8HZFs%2BB3oAawRlAmJTNV4wVypSfVFnBSgObQ80BDRROgF5Xy0HZlI4BWlVPlYxUzwHYgEuACsCLA9uDy8FIlMxB2lbNQd6AGEEZQJiUy9eN1c0UnxRZAU3DmYPLwQjUTMBY18zB2dSMgVlVTZWNVM9B2ABLgArAjQPPg8zBT5TYgczW2IHZwBiBGYCYlNkXmdXNlJ8UWcFMA5uDzkEP1E3AWZfMQd7Ui4FGFVFVilTfAcnAWQAcgIsDzoPbgVp&_c=a70e327597460269ee0853b1ca78c9ba"
-  }
-  
-  /**
-   Deserialize date from a string representation.
-   
-   - Parameter date: The string representation.
-   
-   - Returns: Date either the string is correctly formatted, nil neither.
-   */
-  private func deserializeDate(date: String) -> Date? {
-    if let validDate = dateTimeFormatter.date(from: date) {
-      return validDate
-    }
-
-    return nil
-  }
-
-  /**
-   Formats forecasts, gathered by days.
-   
-   - Parameter entities: Forecasts
-   
-   - Returns: The formatted array of forecasts by days.
-   */
-  private func formatData(entities: [Forecast]) -> FormattedForecasts {
-    var formattedData: FormattedForecasts = [:]
-
-    for entity in entities {
-      let index = dateFormatter.string(from: entity.datetime!)
-      
-      if nil == formattedData[index] {
-        formattedData[index] = []
+  func deserialize(forLatitude latitude: Double, andLongitude longitude: Double, json: JSON) -> FormattedForecasts {
+    var entities: [Forecast] = []
+    for (key, data) in json {
+      guard let existingDate = self.deserializeDate(date: key) else {
+        continue
       }
-      
-      formattedData[index]?.append(entity)
+
+      guard let consistentEntity = self.deserialize(forDate: existingDate, latitude: latitude, longitude: longitude, data: data) else {
+        continue
+      }
+
+      entities.append(consistentEntity)
     }
 
-    return formattedData
+    return self.formatData(entities: entities)
   }
 }
