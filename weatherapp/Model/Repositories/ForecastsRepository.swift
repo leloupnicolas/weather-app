@@ -41,6 +41,13 @@ protocol ForecastsRepository {
    */
   func fetchLocally(forLatitude latitude: Double, andLongitude longitude: Double, completion: @escaping (FormattedForecasts) -> Void)
 
+  /**
+   Deserializes forecasts from the API response.
+   
+   - Parameter latitude:   The location-to-get-weather's latitude.
+   - Parameter longitude:  The location-to-get-weather's longitude.
+   - Parameter json:       The SwiftyJSON represetation of data.
+   */
   func deserialize(forLatitude latitude: Double, andLongitude longitude: Double, json: JSON) -> FormattedForecasts
 }
 
