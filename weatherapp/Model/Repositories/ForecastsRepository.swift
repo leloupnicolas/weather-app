@@ -152,22 +152,23 @@ extension DefaultForecastsRepository: ForecastsRepository {
   }
 
   /**
+   Formats api url with given latitude and longitude.
    
+   - Parameter latitude:  The latitude
+   - Parameter longitude: The longiude
    
-   - Parameter :
-   
-   - Returns :
+   - Returns:  The formatted url
    */
   private func formatUrl(forLatitude latitude: Double, andLongitude longitude: Double) -> String {
     return "https://www.infoclimat.fr/public-api/gfs/json?_ll=\(latitude),\(longitude)&_auth=UkgFElUrVnRTfgcwAXcAKQJqDzoPeQUiUy8HZFs%2BB3oAawRlAmJTNV4wVypSfVFnBSgObQ80BDRROgF5Xy0HZlI4BWlVPlYxUzwHYgEuACsCLA9uDy8FIlMxB2lbNQd6AGEEZQJiUy9eN1c0UnxRZAU3DmYPLwQjUTMBY18zB2dSMgVlVTZWNVM9B2ABLgArAjQPPg8zBT5TYgczW2IHZwBiBGYCYlNkXmdXNlJ8UWcFMA5uDzkEP1E3AWZfMQd7Ui4FGFVFVilTfAcnAWQAcgIsDzoPbgVp&_c=a70e327597460269ee0853b1ca78c9ba"
   }
   
   /**
+   Deserialize date from a string representation.
    
+   - Parameter date: The string representation.
    
-   - Parameter :
-   
-   - Returns :
+   - Returns: Date either the string is correctly formatted, nil neither.
    */
   private func deserializeDate(date: String) -> Date? {
     if let validDate = dateTimeFormatter.date(from: date) {
@@ -178,11 +179,11 @@ extension DefaultForecastsRepository: ForecastsRepository {
   }
 
   /**
+   Formats forecasts, gathered by days.
    
+   - Parameter entities: Forecasts
    
-   - Parameter :
-   
-   - Returns :
+   - Returns: The formatted array of forecasts by days.
    */
   private func formatData(entities: [Forecast]) -> FormattedForecasts {
     var formattedData: FormattedForecasts = [:]
